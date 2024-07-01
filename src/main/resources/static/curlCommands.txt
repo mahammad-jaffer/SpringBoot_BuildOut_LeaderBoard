@@ -1,0 +1,5 @@
+curl -X PUT -H "Content-Type: application/json" -d '{"key1":"value"}' "YOUR_URI"
+
+curl -X PUT -H "Content-Type: application/json" -d '{"score" : 91}' http://localhost:8080/users/142
+
+curl -X DELETE http://localhost:8080/users/123
