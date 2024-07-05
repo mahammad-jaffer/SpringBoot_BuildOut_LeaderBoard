@@ -1,6 +1,5 @@
 package com.example.LeaderBoard.controller;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -16,88 +15,75 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.example.LeaderBoard.dto.User;
-import com.example.LeaderBoard.repository.UserRepository;
+import com.example.LeaderBoard.service.LeaderBoardService;
 
 @RestController
 public class UserController {
 
     @Autowired
-    private UserRepository userRepository;
+    private LeaderBoardService leaderBoardService;
 
-    @GetMapping("/say")
-	public String sayHello() {
-        // List<User> usersList = new ArrayList<User>();
-        userRepository.findAll();
-		return "Hello Spring boot";
-	}
 
     @GetMapping("/users")
-    public ResponseEntity<List<User>> getAllUsers() {
-
-        System.out.println("=======================");
-        System.out.println("In here");
-        System.out.println("=======================");
-        List<User> usersList = new ArrayList<User>();
-        userRepository.findAll().forEach(usersList::add);
-
+    public ResponseEntity<?> getAllUsers() {
+        List<User> usersList = leaderBoardService.getUsers();
         if(usersList.isEmpty()) {
-            System.out.println("=======================");
-        System.out.println("In here");
-        System.out.println("=======================");
-            return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+            return ResponseEntity.status(HttpStatus.NO_CONTENT).body("No Users Found");
         }
-
-        return new ResponseEntity<>(usersList, HttpStatus.OK);
-
+        return ResponseEntity.status(HttpStatus.OK).body(usersList);
     }
+
 
     @GetMapping("/users/{userId}")
-    public ResponseEntity<User> getUserById(@PathVariable("userId") String userId) {
-        
-        Optional<User> userData = userRepository.findById(userId);
-
+    public ResponseEntity<?> getUserById(@PathVariable("userId") String userId) {
+        Optional<User> userData = leaderBoardService.getUserById(userId);
         if(userData.isPresent()) {
-            return new ResponseEntity<>(userData.get(), HttpStatus.OK);
+            return ResponseEntity.status(HttpStatus.OK).body(userData.get());
         }
         else {
-            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User with given Id is not found");
         }
     }
 
-    @SuppressWarnings("null")
+
     @PostMapping("/user")
-    public ResponseEntity<User> createUser(@RequestBody User user) {
+    public ResponseEntity<?> createUser(@RequestBody User user) {
         try{
-            User newUser = userRepository.save(new User(user.getUserId(), user.getUserName()));
-            return new ResponseEntity<>(newUser, HttpStatus.OK);
+            if(user.getUserId() == null || user.getUserName() == null) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Please provide both UserId and UserName");
+            }
+            User newUser = leaderBoardService.createUser(user);
+            return ResponseEntity.status(HttpStatus.OK).body(newUser);
         }
         catch(Exception e) {
-            return new ResponseEntity<>(null, HttpStatus.INTERNAL_SERVER_ERROR);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
         }
     }
+
 
     @PutMapping("/users/{userId}")
-    public ResponseEntity<User> updateScore(@PathVariable("userId") String userId, @RequestBody User user) {
-        Optional<User> userDate = userRepository.findById(userId);
-
-        if(userDate.isPresent()) {
-            User _user = userDate.get();
-            _user.setScore(user.getScore());
-            return new ResponseEntity<>(userRepository.save(_user), HttpStatus.OK);
+    public ResponseEntity<?> updateScore(@PathVariable("userId") String userId, @RequestBody User user) {
+        try {
+            Optional<User> updatedUser = leaderBoardService.updateUserScore(userId, user);
+            if(updatedUser.isPresent())
+                return ResponseEntity.status(HttpStatus.OK).body(updatedUser);
+            else   
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User Not Found/ Please provide valid score");
         }
-        else {
-            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        catch(Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
         }
     }
 
+
     @DeleteMapping("/users/{userId}") 
-    public ResponseEntity<HttpStatus> deleteUser(@PathVariable("userId") String userId) {
+    public ResponseEntity<?> deleteUser(@PathVariable("userId") String userId) {
         try{
-            userRepository.deleteById(userId);
-            return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+            leaderBoardService.delete(userId);
+            return ResponseEntity.status(HttpStatus.OK).body(null);
         }
         catch(Exception e) {
-            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
         }
     }
 }
