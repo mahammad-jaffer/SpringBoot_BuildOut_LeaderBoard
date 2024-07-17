@@ -46,7 +46,7 @@ public class UserController {
     }
 
 
-    @PostMapping("/user")
+    @PostMapping("/users")
     public ResponseEntity<?> createUser(@RequestBody User user) {
         try{
             if(user.getUserId() == null || user.getUserName() == null) {
